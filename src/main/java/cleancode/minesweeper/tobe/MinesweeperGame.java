@@ -9,7 +9,7 @@ public class MinesweeperGame {
     public static final int BOARD_ROW_SIZE = 8;
     public static final int BOARD_COL_SIZE = 10;// 변수 가까이 두기 위해 반복문 안에 선언하면 매번 새로운 scanner로 낭비 => 상수
     public static final Scanner SCANNER = new Scanner(System.in);
-    private static final String[][] BOARD = new String[BOARD_ROW_SIZE][BOARD_COL_SIZE];
+    private static final Cell[][] BOARD = new Cell[BOARD_ROW_SIZE][BOARD_COL_SIZE];
     private static final Integer[][] NEARBY_LAND_MINE_COUNTS = new Integer[BOARD_ROW_SIZE][BOARD_COL_SIZE];
     private static final boolean[][] LAND_MINES = new boolean[BOARD_ROW_SIZE][BOARD_COL_SIZE];
     public static final int LAND_MINE_COUNT = 10;
@@ -53,14 +53,14 @@ public class MinesweeperGame {
         int selectedRowIndex = getSelectedRowIndex(cellInput);
 
         if (doesUserChooseToPlantFlag(userActionInput)) {
-            BOARD[selectedRowIndex][selectedColIndex] = FLAG_SIGN;
+            BOARD[selectedRowIndex][selectedColIndex] = Cell.ofFlag();
             checkIfGameIsOver();
             return;
         }
 
         if (doesUserChooseToOpenCell(userActionInput)) {
             if (isLandMineCell(selectedRowIndex, selectedColIndex)) {
-                BOARD[selectedRowIndex][selectedColIndex] = LAND_MINE_SIGN;
+                BOARD[selectedRowIndex][selectedColIndex] = Cell.ofLandMine();
                 changeGameStatusToLose();
                 return;
             }
@@ -95,7 +95,7 @@ public class MinesweeperGame {
 
     private static int getSelectedColIndex(String cellInput) {
         char cellInputCol = cellInput.charAt(0);
-        return  convertColFrom(cellInputCol);
+        return convertColFrom(cellInputCol);
     }
 
     private static String getUserActionInputFromUser() {
@@ -130,7 +130,8 @@ public class MinesweeperGame {
     private static boolean isAllCellOpened() {
         return Arrays.stream(BOARD) // Stream<String[]>
                 .flatMap(Arrays::stream) // Stream<String[]>
-                .noneMatch(CLOSED_CELL_SIGN::equals);  // 닫힌 셀이 하나도 없으면 다 열린것 => 상수를 조건으로 해서 안전하게 수정 (cell -> CLOSED_CELL_SIGN.equals(cell))
+                .noneMatch(Cell::isClosed);
+//                .noneMatch(CLOSED_CELL_SIGN::equals);  // 닫힌 셀이 하나도 없으면 다 열린것 => 상수를 조건으로 해서 안전하게 수정 (cell -> CLOSED_CELL_SIGN.equals(cell))
     }
 
     private static int convertRowFrom(char cellInputRow) {
@@ -170,10 +171,10 @@ public class MinesweeperGame {
 
     private static void showBoard() {
         System.out.println("   a b c d e f g h i j");
-        for (int i = 0; i < BOARD_ROW_SIZE; i++) {
-            System.out.printf("%d  ", i + 1);
-            for (int j = 0; j < BOARD_COL_SIZE; j++) {
-                System.out.print(BOARD[i][j] + " ");
+        for (int row = 0; row < BOARD_ROW_SIZE; row++) {
+            System.out.printf("%d  ", row + 1);
+            for (int col = 0; col < BOARD_COL_SIZE; col++) {
+                System.out.print(BOARD[row][col].getSign() + " ");
             }
             System.out.println();
         }
@@ -183,7 +184,7 @@ public class MinesweeperGame {
     private static void initializeGame() {
         for (int row = 0; row < BOARD_ROW_SIZE; row++) { // 단순 i, j가 아닌 row, col로 변경
             for (int col = 0; col < BOARD_COL_SIZE; col++) {
-                BOARD[row][col] = CLOSED_CELL_SIGN;
+                BOARD[row][col] = Cell.ofClosed();
             }
         }
 
@@ -244,17 +245,17 @@ public class MinesweeperGame {
         if (row < 0 || row >= BOARD_ROW_SIZE || col < 0 || col >= BOARD_COL_SIZE) {
             return;
         }
-        if (!BOARD[row][col].equals(CLOSED_CELL_SIGN)) {
+        if (BOARD[row][col].doesNotClosed()) {
             return;
         }
         if (isLandMineCell(row, col)) {
             return;
         }
         if (NEARBY_LAND_MINE_COUNTS[row][col] != 0) {
-            BOARD[row][col] = String.valueOf(NEARBY_LAND_MINE_COUNTS[row][col]);
+            BOARD[row][col] = Cell.of(String.valueOf(NEARBY_LAND_MINE_COUNTS[row][col]));
             return;
         } else {
-            BOARD[row][col] = OPENED_CELL_SIGN;
+            BOARD[row][col] = Cell.ofOpened();
         }
         // 재귀
         open(row - 1, col - 1);
