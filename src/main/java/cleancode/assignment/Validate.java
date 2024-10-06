@@ -10,9 +10,11 @@ public class Validate {
             log.info("주문 항목이 없습니다.");
             return false;
         }
+
         else {
             return isTotalPriceOverZero(order) && hasCustomersInfo(order);
         }
+
     }
 
     public boolean hasEmptyItems(Order order) {
